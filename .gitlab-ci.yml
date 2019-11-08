@@ -1,0 +1,49 @@
+image: alpine
+
+stages:
+  - Package
+  - Compile
+  - Output Files
+
+BlockZ.TXXGYY.tar.gz:
+  stage: Package
+  script:
+    - tar -czvf BlocZ.TXXGYY.tar.gz client.c server.c CMakeLists.txt ./uthash/uthash.h
+  artifacts:
+    paths:
+      - BlockZ.TXXGYY.tar.gz
+
+CMake Build:
+  image: mickare/cmake-clang
+  stage: Compile
+  dependencies:
+    - BlockZ.TXXGYY.tar.gz
+  artifacts:
+    paths:
+      - build/
+  script:
+    - mkdir extract; cd extract
+    - tar -xzvf ../BlockZ.TXXGYY.tar.gz
+    - mkdir ../build; cd ../build
+    - cmake ../extract && make
+
+Correct Output Files:
+  stage: Output Files
+  dependencies:
+    - CMake Build
+  script:
+    - cd build
+    - ls client
+    - ls server
+
+## Server:
+##  stage: Test
+##  image: python
+##  dependencies:
+##    - CMake Build
+##  script:
+##    - cd build
+##    - nohup ./server 6000
+##    - cd ../test
+##    - python sr.py -f ./services/server.service -a http://localhost -p 6000 -A http://localhost -P 7000
+##    - sleep 10
