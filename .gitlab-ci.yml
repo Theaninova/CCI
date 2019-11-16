@@ -4,26 +4,27 @@ stages:
   - Package
   - Compile
   - Output Files
+  - Test
 
-BlockZ.TXXGYY.tar.gz:
+Block3.T08G06.tar.gz:
   stage: Package
   script:
-    - tar -czvf BlocZ.TXXGYY.tar.gz client.c server.c CMakeLists.txt ./uthash/uthash.h
+    - tar -czvf Block3.T08G06.tar.gz CMakeLists.txt src/
   artifacts:
     paths:
-      - BlockZ.TXXGYY.tar.gz
+      - Block3.T08G06.tar.gz
 
 CMake Build:
   image: mickare/cmake-clang
   stage: Compile
   dependencies:
-    - BlockZ.TXXGYY.tar.gz
+    - Block3.T08G06.tar.gz
   artifacts:
     paths:
       - build/
   script:
     - mkdir extract; cd extract
-    - tar -xzvf ../BlockZ.TXXGYY.tar.gz
+    - tar -xzvf ../Block3.T08G06.tar.gz
     - mkdir ../build; cd ../build
     - cmake ../extract && make
 
@@ -36,14 +37,18 @@ Correct Output Files:
     - ls client
     - ls server
 
-## Server:
-##  stage: Test
-##  image: python
-##  dependencies:
-##    - CMake Build
-##  script:
-##    - cd build
-##    - nohup ./server 6000
-##    - cd ../test
-##    - python sr.py -f ./services/server.service -a http://localhost -p 6000 -A http://localhost -P 7000
-##    - sleep 10
+Client:
+  stage: Test
+  image: python:3.7-stretch
+  dependencies:
+    - Correct Output Files
+  script:
+    - python3.7 ./test/sr.py -f ./test/services/client.service -a localhost -p 2000 -A localhost -P 2200 -F ./build/client
+
+Server:
+  stage: Test
+  image: python:3.7-stretch
+  dependencies:
+    - Correct Output Files
+  script:
+    - python3.7 ./test/sr.py -f ./test/services/server.service -a localhost -p 2000 -A localhost -P 2200 -F ./build/server
